@@ -7,7 +7,7 @@ ofxSandboxTracker::ofxSandboxTracker() {
 }
 
 //--------------------------------------------------------------
-ofxSandboxTracker::ofxSandboxTracker() {
+ofxSandboxTracker::~ofxSandboxTracker() {
     
 }
 

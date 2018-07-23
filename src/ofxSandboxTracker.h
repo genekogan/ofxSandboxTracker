@@ -9,6 +9,5 @@ public:
     ~ofxSandboxTracker();
     
     void setup();
-s
 };
 
