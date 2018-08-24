@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxCv.h"
 #include "ofxGui.h"
+#include "ofxSandboxTracker.h"
 
 class ofApp : public ofBaseApp{
     
@@ -23,27 +23,15 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     
-    
-    void analyzeImage();
-    void updateFilter(int idx);
-    
+    ofxSandboxTracker sandbox;
     
     int numTrackingColors = 3;
     int width = 320;
     int height = 240;
-    
-    bool isCam;
+    bool isCam = false;
     
     ofVideoGrabber cam;
     ofImage src;
-    
-    vector<ofImage> diff;
-    vector<ofImage> diffInverted;
-    vector<ofImage> diffThresholded;
-    vector<ofImage> filters;
-    
-    vector<ofColor> colors, targetColors;
-    ofFbo filterFbo;
     
 };
 
