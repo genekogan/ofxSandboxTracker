@@ -34,7 +34,7 @@ void ofxSandboxTracker::setup(int width, int height, int numTrackingColors) {
          
          vec4 color = vec4(1,1,1,1);
          color = mix(color, vec4(1,0,0,1), rTxt.r );
-         color = mix(color, vec4(0,1,0,1), gTxt.r );
+         color = mix(color, vec4(0.039,1,0.039,1), gTxt.r );
          color = mix(color, vec4(0,0,1,1), bTxt.r );
          
          gl_FragColor = color;

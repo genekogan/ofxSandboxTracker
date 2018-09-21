@@ -14,6 +14,8 @@ public:
     
     void draw(int x, int y);
     void drawDebug(int x, int y);
+
+    ofFbo & getFbo() {return shaderFbo;}
     
     void setThreshold(float thresh) {this->thresh = thresh;}
     void setFilterColor(int idxFilter, ofColor color);
