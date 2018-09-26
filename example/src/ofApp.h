@@ -25,13 +25,14 @@ public:
     
     ofxSandboxTracker sandbox;
     
-    int numTrackingColors = 3;
     int width = 320;
     int height = 240;
-    bool isCam = false;
+    int srcMode = 1;
     
     ofVideoGrabber cam;
+    ofVideoPlayer video;
     ofImage src;
+    
     
 };
 
