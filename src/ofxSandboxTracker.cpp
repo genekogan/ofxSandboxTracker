@@ -18,7 +18,7 @@ ofxSandboxTracker::~ofxSandboxTracker() {
 void ofxSandboxTracker::setup(int width, int height) {
     this->width = width;
     this->height = height;
-    this->numTrackingColors = 5;
+    this->numTrackingColors = 4;
     
     string shaderProgram = STRINGIFY(
          uniform sampler2DRect tex0;
@@ -72,7 +72,7 @@ void ofxSandboxTracker::setup(int width, int height) {
     
     for (int i=0; i<numTrackingColors; i++) {
         trackColors[i].set(0, 0, 0);
-        outColors[0].set(0, 0, 0);
+        outColors[i].set(0, 0, 0);
     }
     
     // this can be setup like in doodle tunes
@@ -83,25 +83,17 @@ void ofxSandboxTracker::setup(int width, int height) {
     gui.add(motionThreshLow.set("motion trip low", 10, 0, 20));
     gui.add(motionThreshHigh.set("motion trip high", 0, 0, 20));
     
-    
-    
-    
-    
+    // setup homography
     distortedFbo.allocate(width, height);
-    
     originalCorners[0].set(0, 0);
     originalCorners[1].set(width, 0);
     originalCorners[2].set(width, height);
     originalCorners[3].set(0, height);
-    
     distortedCorners[0].set(0, 0);
     distortedCorners[1].set(width, 0);
     distortedCorners[2].set(width, height);
     distortedCorners[3].set(0, height);
-
     homography = ofxHomography::findHomography(originalCorners, distortedCorners);
-    
-    
 }
 
 //--------------------------------------------------------------
@@ -165,7 +157,7 @@ void ofxSandboxTracker::drawDebug() {
     ofTranslate(dx, dy);
     
     // original image
-    ofTranslate(gui.getWidth()+10, 0);
+    ofTranslate(gui.getWidth()+5, 0);
     ofSetColor(255);
     srcImage.draw(0, 0);
     
@@ -178,11 +170,11 @@ void ofxSandboxTracker::drawDebug() {
 
     // draw distorted image
     ofSetColor(255);
-    ofTranslate(srcImage.getWidth()+10, 0);
+    ofTranslate(srcImage.getWidth()+5, 0);
     distortedFbo.draw(0, 0);
     
     // draw shader image
-    ofTranslate(distortedFbo.getWidth()+10, 0);
+    ofTranslate(-srcImage.getWidth()-5, srcImage.getHeight()+5);
     shaderFbo.draw(0, 0);
     
     ofPopMatrix();
@@ -195,13 +187,14 @@ void ofxSandboxTracker::setTrackColor(int idx, ofColor clr) {
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::setOutColor(int idx, ofColor clr) {
+    cout << "COLOR TO " << idx << " " << ofToString(clr) << endl;
     outColors[idx].set(clr);
 }
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::keyEvent(int key) {
 
-    int x = ofGetMouseX() - dx - (gui.getWidth()+10);
+    int x = ofGetMouseX() - dx - (gui.getWidth()+5);
     int y = ofGetMouseY() - dy;
     
     unsigned char * pixels = srcImage.getPixels().getData();
@@ -257,18 +250,10 @@ void ofxSandboxTracker::saveSettings(string filename) {
     xml.setValue("corners:p3:y", originalCorners[3].y);
     
     // track colors
-    xml.setValue("trackColors:c0", trackColors[0].getHex());
-    xml.setValue("trackColors:c1", trackColors[1].getHex());
-    xml.setValue("trackColors:c2", trackColors[2].getHex());
-    xml.setValue("trackColors:c3", trackColors[3].getHex());
-    xml.setValue("trackColors:c4", trackColors[4].getHex());
-
-    // out colors
-    xml.setValue("outColors:c0", outColors[0].getHex());
-    xml.setValue("outColors:c1", outColors[1].getHex());
-    xml.setValue("outColors:c2", outColors[2].getHex());
-    xml.setValue("outColors:c3", outColors[3].getHex());
-    xml.setValue("outColors:c4", outColors[4].getHex());
+    for (int i=0; i<numTrackingColors; i++) {
+        xml.setValue("trackColors:c"+ofToString(i), trackColors[i].getHex());
+        xml.setValue("outColors:c"+ofToString(i), outColors[i].getHex());
+    }
 
     // save
     xml.saveFile(filename);
@@ -291,26 +276,10 @@ void ofxSandboxTracker::loadSettings(string filename) {
 
     // track colors
     ofColor clr;
-    clr.setHex(xml.getValue("trackColors:c0", trackColors[0].getHex()));
-    setTrackColor(0, clr);
-    clr.setHex(xml.getValue("trackColors:c1", trackColors[1].getHex()));
-    setTrackColor(1, clr);
-    clr.setHex(xml.getValue("trackColors:c2", trackColors[2].getHex()));
-    setTrackColor(2, clr);
-    clr.setHex(xml.getValue("trackColors:c3", trackColors[3].getHex()));
-    setTrackColor(3, clr);
-    clr.setHex(xml.getValue("trackColors:c4", trackColors[4].getHex()));
-    setTrackColor(4, clr);
-    
-    // out colors
-    clr.setHex(xml.getValue("outColors:c0", trackColors[0].getHex()));
-    setOutColor(0, clr);
-    clr.setHex(xml.getValue("outColors:c1", trackColors[1].getHex()));
-    setOutColor(1, clr);
-    clr.setHex(xml.getValue("outColors:c2", trackColors[2].getHex()));
-    setOutColor(2, clr);
-    clr.setHex(xml.getValue("outColors:c3", trackColors[3].getHex()));
-    setOutColor(3, clr);
-    clr.setHex(xml.getValue("outColors:c4", trackColors[4].getHex()));
-    setOutColor(4, clr);
+    for (int i=0; i<numTrackingColors; i++) {
+        clr.setHex(xml.getValue("trackColors:c"+ofToString(i), trackColors[i].getHex()));
+        setTrackColor(i, clr);
+        clr.setHex(xml.getValue("outColors:c"+ofToString(i), outColors[i].getHex()));
+        setOutColor(i, clr);
+    }
 }
