@@ -1,4 +1,6 @@
 ofxCv
 ofxGui
+ofxHomography
 ofxOpenCv
 ofxSandboxTracker
+ofxXmlSettings

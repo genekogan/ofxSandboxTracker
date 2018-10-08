@@ -1,8 +1,10 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxXmlSettings.h"
 #include "ofxGui.h"
 #include "ofxCv.h"
+#include "ofxHomography.h"
 
 
 class ofxSandboxTracker {
@@ -22,7 +24,13 @@ public:
     void setThreshold(float thresh) {this->thresh = thresh;}
     void setTrackColor(int idx, ofColor clr);
     void setOutColor(int idx, ofColor clr);
-
+    void setCorner(int idx, int x, int y);
+    
+    void saveSettings(string filename);
+    void loadSettings(string filename);
+    void saveSettings() {saveSettings("settings.xml");}
+    void loadSettings() {loadSettings("settings.xml");}
+    
     void keyEvent(int key);
     
 protected:
@@ -49,6 +57,15 @@ protected:
     
     ofxPanel gui;
     int dx, dy;
+    
+    
+    
+    
+    ofPoint originalCorners[4];
+    ofPoint distortedCorners[4];
+    ofMatrix4x4 homography;
+
+    ofFbo distortedFbo;
 };
 
 

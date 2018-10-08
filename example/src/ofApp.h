@@ -8,6 +8,7 @@ class ofApp : public ofBaseApp{
     
 public:
     void setup();
+    void exit();
     void update();
     void draw();
     
@@ -27,7 +28,7 @@ public:
     
     int width = 320;
     int height = 240;
-    int srcMode = 1;
+    int srcMode = 0;
     
     ofVideoGrabber cam;
     ofVideoPlayer video;

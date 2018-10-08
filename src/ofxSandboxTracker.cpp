@@ -83,6 +83,31 @@ void ofxSandboxTracker::setup(int width, int height) {
     gui.add(motionThreshLow.set("motion trip low", 10, 0, 20));
     gui.add(motionThreshHigh.set("motion trip high", 0, 0, 20));
     
+    
+    
+    
+    
+    distortedFbo.allocate(width, height);
+    
+    originalCorners[0].set(0, 0);
+    originalCorners[1].set(width, 0);
+    originalCorners[2].set(width, height);
+    originalCorners[3].set(0, height);
+    
+    distortedCorners[0].set(0, 0);
+    distortedCorners[1].set(width, 0);
+    distortedCorners[2].set(width, height);
+    distortedCorners[3].set(0, height);
+
+    homography = ofxHomography::findHomography(originalCorners, distortedCorners);
+    
+    
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::setCorner(int idx, int x, int y) {
+    originalCorners[idx].set(x, y);
+    homography = ofxHomography::findHomography(originalCorners, distortedCorners);
 }
 
 //--------------------------------------------------------------
@@ -103,18 +128,28 @@ void ofxSandboxTracker::update(ofPixels & src) {
     float sumMotion = motion[0]+motion[1]+motion[2];
     amtMotion.set(ofLerp(amtMotion, sumMotion, motionLerp));
     
-    // go through shader
+    // distort original image
+    distortedFbo.begin();
+    ofPushMatrix();
+    ofMultMatrix(homography);
+    ofClear(0, 255);
+    srcImage.draw(0, 0, width, height);
+    ofPopMatrix();
+    distortedFbo.end();
+
+    // go through color shader
     shaderFbo.begin();
     ofClear(0, 255);
     shader.begin();
-    shader.setUniformTexture("tex0", srcImage, 1);
+    shader.setUniformTexture("tex0", distortedFbo, 1);
     for (int idx=0; idx<numTrackingColors; idx++) {
         shader.setUniform3f("track_color"+ofToString(idx), (float) trackColors[idx].r / 255.0f, (float) trackColors[idx].g / 255.0f, (float) trackColors[idx].b / 255.0f);
         shader.setUniform3f("out_color"+ofToString(idx), (float) outColors[idx].r / 255.0f, (float) outColors[idx].g / 255.0f, (float) outColors[idx].b / 255.0f);
     }
-    srcImage.draw(0, 0, width, height);
+    distortedFbo.draw(0, 0, width, height);
     shader.end();
     shaderFbo.end();
+    
 }
 
 //--------------------------------------------------------------
@@ -128,8 +163,27 @@ void ofxSandboxTracker::drawDebug() {
     
     ofPushMatrix();
     ofTranslate(dx, dy);
-    srcImage.draw(gui.getWidth()+10, 0);
-    shaderFbo.draw(gui.getWidth()+srcImage.getWidth()+20, 0);
+    
+    // original image
+    ofTranslate(gui.getWidth()+10, 0);
+    ofSetColor(255);
+    srcImage.draw(0, 0);
+    
+    // draw homography corners
+    ofSetColor(ofColor::lightBlue);
+    ofDrawEllipse(originalCorners[0].x, originalCorners[0].y, 20, 20);
+    ofDrawEllipse(originalCorners[1].x, originalCorners[1].y, 20, 20);
+    ofDrawEllipse(originalCorners[2].x, originalCorners[2].y, 20, 20);
+    ofDrawEllipse(originalCorners[3].x, originalCorners[3].y, 20, 20);
+
+    // draw distorted image
+    ofSetColor(255);
+    ofTranslate(srcImage.getWidth()+10, 0);
+    distortedFbo.draw(0, 0);
+    
+    // draw shader image
+    ofTranslate(distortedFbo.getWidth()+10, 0);
+    shaderFbo.draw(0, 0);
     
     ofPopMatrix();
 }
@@ -166,6 +220,7 @@ void ofxSandboxTracker::keyEvent(int key) {
         setTrackColor(3, ofColor(r, g, b));
     } else if (key=='5') {
         setTrackColor(4, ofColor(r, g, b));
+    
     } else if (key=='q') {
         setOutColor(0, ofColor(r, g, b));
     } else if (key=='w') {
@@ -176,6 +231,86 @@ void ofxSandboxTracker::keyEvent(int key) {
         setOutColor(3, ofColor(r, g, b));
     } else if (key=='t') {
         setOutColor(4, ofColor(r, g, b));
+    
+    } else if (key=='!') {
+        setCorner(0, x, y);
+    } else if (key=='@') {
+        setCorner(1, x, y);
+    } else if (key=='#') {
+        setCorner(2, x, y);
+    } else if (key=='$') {
+        setCorner(3, x, y);
     }
 }
 
+//--------------------------------------------------------------
+
+void ofxSandboxTracker::saveSettings(string filename) {
+    ofxXmlSettings xml;
+    xml.setValue("corners:p0:x", originalCorners[0].x);
+    xml.setValue("corners:p0:y", originalCorners[0].y);
+    xml.setValue("corners:p1:x", originalCorners[1].x);
+    xml.setValue("corners:p1:y", originalCorners[1].y);
+    xml.setValue("corners:p2:x", originalCorners[2].x);
+    xml.setValue("corners:p2:y", originalCorners[2].y);
+    xml.setValue("corners:p3:x", originalCorners[3].x);
+    xml.setValue("corners:p3:y", originalCorners[3].y);
+    
+    // track colors
+    xml.setValue("trackColors:c0", trackColors[0].getHex());
+    xml.setValue("trackColors:c1", trackColors[1].getHex());
+    xml.setValue("trackColors:c2", trackColors[2].getHex());
+    xml.setValue("trackColors:c3", trackColors[3].getHex());
+    xml.setValue("trackColors:c4", trackColors[4].getHex());
+
+    // out colors
+    xml.setValue("outColors:c0", outColors[0].getHex());
+    xml.setValue("outColors:c1", outColors[1].getHex());
+    xml.setValue("outColors:c2", outColors[2].getHex());
+    xml.setValue("outColors:c3", outColors[3].getHex());
+    xml.setValue("outColors:c4", outColors[4].getHex());
+
+    // save
+    xml.saveFile(filename);
+}
+
+void ofxSandboxTracker::loadSettings(string filename) {
+    ofxXmlSettings xml;
+    
+    bool success = xml.loadFile(filename);
+    if (!success) {
+        ofLog(OF_LOG_WARNING) << "No settings file found";
+        return;
+    }
+    
+    // corners
+    setCorner(0, xml.getValue("corners:p0:x", originalCorners[0].x), xml.getValue("corners:p0:y", originalCorners[0].y));
+    setCorner(1, xml.getValue("corners:p1:x", originalCorners[1].x), xml.getValue("corners:p1:y", originalCorners[1].y));
+    setCorner(2, xml.getValue("corners:p2:x", originalCorners[2].x), xml.getValue("corners:p2:y", originalCorners[2].y));
+    setCorner(3, xml.getValue("corners:p3:x", originalCorners[3].x), xml.getValue("corners:p3:y", originalCorners[3].y));
+
+    // track colors
+    ofColor clr;
+    clr.setHex(xml.getValue("trackColors:c0", trackColors[0].getHex()));
+    setTrackColor(0, clr);
+    clr.setHex(xml.getValue("trackColors:c1", trackColors[1].getHex()));
+    setTrackColor(1, clr);
+    clr.setHex(xml.getValue("trackColors:c2", trackColors[2].getHex()));
+    setTrackColor(2, clr);
+    clr.setHex(xml.getValue("trackColors:c3", trackColors[3].getHex()));
+    setTrackColor(3, clr);
+    clr.setHex(xml.getValue("trackColors:c4", trackColors[4].getHex()));
+    setTrackColor(4, clr);
+    
+    // out colors
+    clr.setHex(xml.getValue("outColors:c0", trackColors[0].getHex()));
+    setOutColor(0, clr);
+    clr.setHex(xml.getValue("outColors:c1", trackColors[1].getHex()));
+    setOutColor(1, clr);
+    clr.setHex(xml.getValue("outColors:c2", trackColors[2].getHex()));
+    setOutColor(2, clr);
+    clr.setHex(xml.getValue("outColors:c3", trackColors[3].getHex()));
+    setOutColor(3, clr);
+    clr.setHex(xml.getValue("outColors:c4", trackColors[4].getHex()));
+    setOutColor(4, clr);
+}

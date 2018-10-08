@@ -20,6 +20,8 @@ void ofApp::setup(){
     sandbox.setOutColor(3, ofColor(255, 255, 255));
     sandbox.setOutColor(4, ofColor(0, 0, 0));
     
+    sandbox.loadSettings();
+    
     if (srcMode==0) {
         cam.setDeviceID(1);
         cam.setup(640, 480);
@@ -31,6 +33,11 @@ void ofApp::setup(){
         src.load("test1.jpg");
         src.resize(width, height);
     }
+}
+
+//--------------------------------------------------------------
+void ofApp::exit() {
+    sandbox.saveSettings();
 }
 
 //--------------------------------------------------------------
