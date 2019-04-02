@@ -18,7 +18,7 @@ ofxSandboxTracker::~ofxSandboxTracker() {
 void ofxSandboxTracker::setup(int width, int height) {
     this->width = width;
     this->height = height;
-    this->numTrackingColors = 4;
+    this->numTrackingColors = 5;
     
     string shaderProgram = STRINGIFY(
          uniform sampler2DRect tex0;
@@ -213,6 +213,8 @@ void ofxSandboxTracker::keyEvent(int key) {
         setTrackColor(3, ofColor(r, g, b));
     } else if (key=='5') {
         setTrackColor(4, ofColor(r, g, b));
+    } else if (key=='6') {
+        //setTrackColor(5, ofColor(r, g, b));
     
     } else if (key=='q') {
         setOutColor(0, ofColor(r, g, b));
@@ -224,6 +226,8 @@ void ofxSandboxTracker::keyEvent(int key) {
         setOutColor(3, ofColor(r, g, b));
     } else if (key=='t') {
         setOutColor(4, ofColor(r, g, b));
+    } else if (key=='y') {
+       // setOutColor(5, ofColor(r, g, b));
     
     } else if (key=='!') {
         setCorner(0, x, y);

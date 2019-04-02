@@ -26,9 +26,9 @@ public:
     
     ofxSandboxTracker sandbox;
     
-    int width = 320;
-    int height = 240;
-    int srcMode = 0;
+    int width;
+    int height;
+    int srcMode;
     
     ofVideoGrabber cam;
     ofVideoPlayer video;

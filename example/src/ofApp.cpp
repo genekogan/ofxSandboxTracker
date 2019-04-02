@@ -3,9 +3,13 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSetWindowShape(1280, 800);
+    ofSetWindowShape(1440, 1080);
     ofSetVerticalSync(true);
     
+    width = 640;
+    height = 480;
+    srcMode = 0;
+
     sandbox.setup(width, height);
     sandbox.setDebugPosition(0, 0);
 
