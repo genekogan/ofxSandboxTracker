@@ -61,13 +61,10 @@ void ofApp::update(){
         }
     }
     
-    
-    
-    
-    //float thresh = ofMap(ofGetMouseX(), 0, ofGetWidth(), 0, 255);
-    //cout << "update " << thresh << endl;
-    //sandbox.setThreshold(thresh);
     sandbox.update(src);
+    if (sandbox.isMotionTripped()) {
+        cout << " got a motion trip event" << ofGetFrameNum()<< endl;
+    }
 }
 
 //--------------------------------------------------------------

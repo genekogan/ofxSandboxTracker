@@ -19,6 +19,8 @@ void ofxSandboxTracker::setup(int width, int height) {
     this->width = width;
     this->height = height;
     this->numTrackingColors = 5;
+    newFrame = false;
+    overwritePrev = false;
     
     string shaderProgram = STRINGIFY(
          uniform sampler2DRect tex0;
@@ -66,7 +68,9 @@ void ofxSandboxTracker::setup(int width, int height) {
     shader.setupShaderFromSource(GL_FRAGMENT_SHADER, shaderProgram);
     shader.linkProgram();
     shaderFbo.allocate(width, height);
-
+    sandboxPrev.allocate(width, height, OF_IMAGE_COLOR_ALPHA);
+    sandboxCurrent.allocate(width, height, OF_IMAGE_COLOR_ALPHA);
+    
     trackColors.resize(numTrackingColors);
     outColors.resize(numTrackingColors);
     
@@ -78,10 +82,12 @@ void ofxSandboxTracker::setup(int width, int height) {
     // this can be setup like in doodle tunes
     gui.setup();
     gui.setName("Sandbox");
-    gui.add(amtMotion.set("motion", 0, 0, 30));
+    gui.add(amtMotion.set("motion", 0, 0, 100));
     gui.add(motionLerp.set("motion lerp", 0.1, 0, 1));
-    gui.add(motionThreshLow.set("motion trip low", 10, 0, 20));
-    gui.add(motionThreshHigh.set("motion trip high", 0, 0, 20));
+    gui.add(motionThreshHigh.set("motion trip", 20, 0, 100));
+    //gui.add(motionThreshLow.set("motion trip low", 10, 0, 100));
+    gui.add(gNewFrameIndicator.set("motion indicator", 0, 0, 1));
+    gui.add(gBlurRadius.set("blur radius", 0, 0, 20));
     
     // setup homography
     distortedFbo.allocate(width, height);
@@ -110,15 +116,26 @@ void ofxSandboxTracker::setDebugPosition(int x, int y) {
 }
 
 //--------------------------------------------------------------
+bool ofxSandboxTracker::isMotionTripped() {
+    if (newFrame) {
+        newFrame = false;
+        gNewFrameIndicator = 1;
+        overwritePrev = true;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+//--------------------------------------------------------------
 void ofxSandboxTracker::update(ofPixels & src) {
     this->srcImage.setFromPixels(src);
     
-    absdiff(srcImage, previous, diff);
-    diff.update();
-    copy(srcImage, previous);
-    motion = mean(toCv(diff));
-    float sumMotion = motion[0]+motion[1]+motion[2];
-    amtMotion.set(ofLerp(amtMotion, sumMotion, motionLerp));
+    // add some gaussian blur
+    if (gBlurRadius > 0) {
+        GaussianBlur(srcImage, srcImage, gBlurRadius);
+        srcImage.update();
+    }
     
     // distort original image
     distortedFbo.begin();
@@ -142,11 +159,30 @@ void ofxSandboxTracker::update(ofPixels & src) {
     shader.end();
     shaderFbo.end();
     
+    // motion sensor
+    shaderFbo.readToPixels(sandboxCurrent);
+    sandboxCurrent.update();
+    absdiff(sandboxCurrent, sandboxPrev, diff);
+    diff.update();
+    if (overwritePrev){
+        copy(sandboxCurrent, sandboxPrev);
+        sandboxPrev.update();
+        overwritePrev = false;
+    }
+    motion = mean(toCv(diff));
+    amtMotion.set(ofLerp(amtMotion, motion[0]+motion[1]+motion[2], motionLerp));
+    motionTrip = (amtMotion > motionThreshHigh);
+    if (motionTrip) {
+        newFrame = true;
+    }
+    //motionReady = (amtMotion < motionThreshLow);
+    
+    gNewFrameIndicator = ofLerp(gNewFrameIndicator, 0, 0.1);
 }
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::draw(int x, int y) {
-    shaderFbo.draw(x, y);
+    sandboxCurrent.draw(x, y);
 }
 
 //--------------------------------------------------------------
@@ -175,7 +211,8 @@ void ofxSandboxTracker::drawDebug() {
     
     // draw shader image
     ofTranslate(-srcImage.getWidth()-5, srcImage.getHeight()+5);
-    shaderFbo.draw(0, 0);
+    sandboxPrev.draw(0, 0);
+    sandboxCurrent.draw(shaderFbo.getWidth()+5, 0);
     
     ofPopMatrix();
 }
@@ -187,7 +224,6 @@ void ofxSandboxTracker::setTrackColor(int idx, ofColor clr) {
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::setOutColor(int idx, ofColor clr) {
-    cout << "COLOR TO " << idx << " " << ofToString(clr) << endl;
     outColors[idx].set(clr);
 }
 
@@ -261,9 +297,11 @@ void ofxSandboxTracker::saveSettings(string filename) {
 
     // save
     xml.saveFile(filename);
+    gui.saveToFile("sandboxSettings.xml");
 }
 
 void ofxSandboxTracker::loadSettings(string filename) {
+    gui.loadFromFile("sandboxSettings.xml");
     ofxXmlSettings xml;
     
     bool success = xml.loadFile(filename);

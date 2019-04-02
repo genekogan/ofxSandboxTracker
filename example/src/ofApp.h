@@ -32,8 +32,7 @@ public:
     
     ofVideoGrabber cam;
     ofVideoPlayer video;
-    ofImage src;
-    
+    ofImage src;    
     
 };
 

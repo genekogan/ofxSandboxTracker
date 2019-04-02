@@ -16,6 +16,8 @@ public:
     void update(ofPixels & src);
     void setDebugPosition(int x, int y);
     
+    bool isMotionTripped();
+    
     void draw(int x, int y);
     void drawDebug();
 
@@ -30,7 +32,7 @@ public:
     void loadSettings(string filename);
     void saveSettings() {saveSettings("settings.xml");}
     void loadSettings() {loadSettings("settings.xml");}
-    
+
     void keyEvent(int key);
     
 protected:
@@ -40,8 +42,9 @@ protected:
 
     ofFbo shaderFbo;
     ofShader shader;
+    ofImage sandboxCurrent;
+    ofImage sandboxPrev;
     ofImage srcImage;
-    ofPixels previous;
     ofImage diff;
     cv::Scalar motion;
     
@@ -49,22 +52,25 @@ protected:
     ofParameter<float> motionLerp;
     ofParameter<float> motionThreshLow;
     ofParameter<float> motionThreshHigh;
+    ofParameter<float> gBlurRadius;
+    ofParameter<float> gNewFrameIndicator;
     
+    ofxPanel gui;
+    
+    int dx, dy;
     int width;
     int height;
     int numTrackingColors;
     float thresh;
     
-    ofxPanel gui;
-    int dx, dy;
-    
-    
-    
+    bool newFrame;
+    bool overwritePrev;
+    bool motionTrip;
+    bool motionReady;
     
     ofPoint originalCorners[4];
     ofPoint distortedCorners[4];
     ofMatrix4x4 homography;
-
     ofFbo distortedFbo;
 };
 
