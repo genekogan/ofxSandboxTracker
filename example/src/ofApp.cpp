@@ -27,7 +27,7 @@ void ofApp::setup(){
     sandbox.loadSettings();
     
     if (srcMode==0) {
-        cam.setDeviceID(1);
+        cam.setDeviceID(0);
         cam.setup(640, 480);
     } else if (srcMode==1) {
         video.load("/Users/gene/Documents/futurium_test2.mp4");
@@ -63,24 +63,22 @@ void ofApp::update(){
     
     sandbox.update(src);
     if (sandbox.isMotionTripped()) {
-        cout << " got a motion trip event" << ofGetFrameNum()<< endl;
+        //ofLog() << " got a motion trip event" << ofGetFrameNum();
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofBackground(0);
-    
     ofSetColor(255);
-
-//    src.draw(0, 0);
-//    sandbox.draw(width, 0);
+    //src.draw(0,
+    //sandbox.draw(width, 0);
     sandbox.drawDebug();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    sandbox.keyEvent(key);
+    //sandbox.keyEvent(key);
 }
 
 //--------------------------------------------------------------
@@ -90,21 +88,22 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-    
+    sandbox.mouseMoved(x, y);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-    
+    sandbox.mouseDragged(x, y);
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
+    sandbox.mousePressed(x, y);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-    
+    sandbox.mouseReleased(x, y);
 }
 
 //--------------------------------------------------------------

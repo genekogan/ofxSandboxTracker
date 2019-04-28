@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<Sandbox>
+	<motion>46.3629</motion>
+	<motion_lerp>0.835</motion_lerp>
+	<motion_trip_low>20</motion_trip_low>
+	<motion_trip_high>0</motion_trip_high>
+	<motion_indicator>1</motion_indicator>
+	<blur_radius>9.3</blur_radius>
+	<motion_trip>41.5</motion_trip>
+</Sandbox>

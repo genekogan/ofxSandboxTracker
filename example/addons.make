@@ -1,4 +1,6 @@
+ofxClickable
 ofxCv
+ofxDraggable
 ofxGui
 ofxHomography
 ofxOpenCv

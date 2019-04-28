@@ -11,7 +11,14 @@ ofxSandboxTracker::ofxSandboxTracker() {
 
 //--------------------------------------------------------------
 ofxSandboxTracker::~ofxSandboxTracker() {
-    
+    for (auto c : colorSelectorsIn){
+        delete c;
+    }
+    for (auto c : colorSelectorsOut){
+        delete c;
+    }
+    colorSelectorsIn.clear();
+    colorSelectorsOut.clear();
 }
 
 //--------------------------------------------------------------
@@ -71,15 +78,29 @@ void ofxSandboxTracker::setup(int width, int height) {
     sandboxPrev.allocate(width, height, OF_IMAGE_COLOR_ALPHA);
     sandboxCurrent.allocate(width, height, OF_IMAGE_COLOR_ALPHA);
     
+    // colors
     trackColors.resize(numTrackingColors);
     outColors.resize(numTrackingColors);
-    
     for (int i=0; i<numTrackingColors; i++) {
         trackColors[i].set(0, 0, 0);
         outColors[i].set(0, 0, 0);
     }
     
-    // this can be setup like in doodle tunes
+    // color selector elements
+    font.load("/Users/gene/Code/of_v0.9.6_osx_release/of-tools/KinectProjectorToolkit/perspective/perspectives-openni/bin/data/verdana.ttf", 20);
+    for (int i=0; i<numTrackingColors; i++) {
+        ClickableColor *ci = new ClickableColor(i);
+        ClickableColor *co = new ClickableColor(i);
+        ci->setup("i"+ofToString(i), 10, 200 + 40*i, 44, 32);
+        co->setup("o"+ofToString(i), 120, 200 + 40*i, 44, 32);
+        colorSelectorsIn.push_back(ci);
+        colorSelectorsOut.push_back(co);
+        ofAddListener(ci->event, this, &ofxSandboxTracker::colorInEvent);
+        //ofAddListener(co->event, this, &ofxSandboxTracker::colorOutEvent);
+    }
+    
+    
+    // options
     gui.setup();
     gui.setName("Sandbox");
     gui.add(amtMotion.set("motion", 0, 0, 100));
@@ -91,21 +112,72 @@ void ofxSandboxTracker::setup(int width, int height) {
     
     // setup homography
     distortedFbo.allocate(width, height);
-    originalCorners[0].set(0, 0);
-    originalCorners[1].set(width, 0);
-    originalCorners[2].set(width, height);
-    originalCorners[3].set(0, height);
+    draggable.addPoint(0, 0);
+    draggable.addPoint(width, 0);
+    draggable.addPoint(width, height);
+    draggable.addPoint(0, height);
     distortedCorners[0].set(0, 0);
     distortedCorners[1].set(width, 0);
     distortedCorners[2].set(width, height);
     distortedCorners[3].set(0, height);
+    
+    // setup draggable
+    draggable.setBoundingBox(dx+gui.getWidth()+5, dy, width, height);
+    draggable.setAuto(true);
+    updateHomography();
+}
+
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::mouseMoved(int x, int y) {
+    for (auto c : colorSelectorsIn) {
+        c->mouseMoved(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mouseMoved(x, y);
+    }
+}
+//--------------------------------------------------------------
+void ofxSandboxTracker::mousePressed(int x, int y) {
+    for (auto c : colorSelectorsIn) {
+        c->mousePressed(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mousePressed(x, y);
+    }
+}
+//--------------------------------------------------------------
+void ofxSandboxTracker::mouseDragged(int x, int y) {
+    for (auto c : colorSelectorsIn) {
+        c->mouseDragged(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mouseDragged(x, y);
+    }
+}
+//--------------------------------------------------------------
+void ofxSandboxTracker::mouseReleased(int x, int y) {
+    for (auto c : colorSelectorsIn) {
+        c->mouseReleased(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mouseReleased(x, y);
+    }
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::updateHomography() {
+    ofPoint originalCorners[4];
+    for (int i=0; i<4; i++) {
+        originalCorners[i] = draggable.get(i);
+    }
     homography = ofxHomography::findHomography(originalCorners, distortedCorners);
 }
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::setCorner(int idx, int x, int y) {
-    originalCorners[idx].set(x, y);
-    homography = ofxHomography::findHomography(originalCorners, distortedCorners);
+    draggable.set(idx, x, y);
+    updateHomography();
 }
 
 //--------------------------------------------------------------
@@ -129,6 +201,10 @@ bool ofxSandboxTracker::isMotionTripped() {
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::update(ofPixels & src) {
+    if (draggable.getIsChanged()) {
+        updateHomography();
+    }
+    
     this->srcImage.setFromPixels(src);
     
     // add some gaussian blur
@@ -187,6 +263,8 @@ void ofxSandboxTracker::draw(int x, int y) {
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::drawDebug() {
+    ofBackground(100);
+    
     gui.draw();
     
     ofPushMatrix();
@@ -195,36 +273,67 @@ void ofxSandboxTracker::drawDebug() {
     // original image
     ofTranslate(gui.getWidth()+5, 0);
     ofSetColor(255);
-    srcImage.draw(0, 0);
     
-    // draw homography corners
-    ofSetColor(ofColor::lightBlue);
-    ofDrawEllipse(originalCorners[0].x, originalCorners[0].y, 20, 20);
-    ofDrawEllipse(originalCorners[1].x, originalCorners[1].y, 20, 20);
-    ofDrawEllipse(originalCorners[2].x, originalCorners[2].y, 20, 20);
-    ofDrawEllipse(originalCorners[3].x, originalCorners[3].y, 20, 20);
-
-    // draw distorted image
-    ofSetColor(255);
-    ofTranslate(srcImage.getWidth()+5, 0);
-    distortedFbo.draw(0, 0);
+    if (colorSelected) {
+        srcImage.draw(0, 0, 2*srcImage.getWidth(), 2*srcImage.getHeight());
+    } else {
+        srcImage.draw(0, 0);
+    }
     
-    // draw shader image
-    ofTranslate(-srcImage.getWidth()-5, srcImage.getHeight()+5);
-    sandboxPrev.draw(0, 0);
-    sandboxCurrent.draw(shaderFbo.getWidth()+5, 0);
+    if (!colorSelected) {
+        // draw distorted image
+        ofSetColor(255);
+        ofTranslate(srcImage.getWidth()+5, 0);
+        distortedFbo.draw(0, 0);
+        
+        // draw shader image
+        ofTranslate(-srcImage.getWidth()-5, srcImage.getHeight()+5);
+        sandboxPrev.draw(0, 0);
+        sandboxCurrent.draw(shaderFbo.getWidth()+5, 0);
+    }
     
     ofPopMatrix();
+    
+    // draw homography corners
+    draggable.draw();
+    
+    if (colorSelected) {
+        float tx = dx + gui.getWidth() + 5;
+        float ty = 0;
+        ofPoint mouse(ofGetMouseX(), ofGetMouseY());
+        ofRectangle rect(tx, ty, 2 * srcImage.getWidth(), 2 * srcImage.getHeight());
+        if (rect.inside(mouse)) {
+            float selectedColorRadius = ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 22, 32);
+            ofColor selectedColor = srcImage.getColor(int(0.5*(mouse.x - tx)), int(0.5*(mouse.y - ty)));
+            ofPushStyle();
+            ofSetColor(ofColor::black);
+            ofDrawEllipse(mouse, selectedColorRadius+1, selectedColorRadius+1);
+            ofSetColor(selectedColor);
+            ofDrawEllipse(mouse, selectedColorRadius, selectedColorRadius);
+            ofPopStyle();
+        }
+    }
+
+    // draw color selectors
+    for (auto c : colorSelectorsIn) {
+        c->draw();
+        font.drawString("->", c->getRectangle().x + c->getRectangle().width + 10, c->getRectangle().y + 20);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->draw();
+    }
 }
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::setTrackColor(int idx, ofColor clr) {
     trackColors[idx].set(clr);
+    colorSelectorsIn[idx]->setBackgroundColor(clr);
 }
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::setOutColor(int idx, ofColor clr) {
     outColors[idx].set(clr);
+    colorSelectorsOut[idx]->setBackgroundColor(clr);
 }
 
 //--------------------------------------------------------------
@@ -277,18 +386,13 @@ void ofxSandboxTracker::keyEvent(int key) {
 }
 
 //--------------------------------------------------------------
-
 void ofxSandboxTracker::saveSettings(string filename) {
     ofxXmlSettings xml;
-    xml.setValue("corners:p0:x", originalCorners[0].x);
-    xml.setValue("corners:p0:y", originalCorners[0].y);
-    xml.setValue("corners:p1:x", originalCorners[1].x);
-    xml.setValue("corners:p1:y", originalCorners[1].y);
-    xml.setValue("corners:p2:x", originalCorners[2].x);
-    xml.setValue("corners:p2:y", originalCorners[2].y);
-    xml.setValue("corners:p3:x", originalCorners[3].x);
-    xml.setValue("corners:p3:y", originalCorners[3].y);
-    
+    for (int i=0; i<4; i++) {
+        xml.setValue("corners:p"+ofToString(i)+":x", draggable.get(i).x);
+        xml.setValue("corners:p"+ofToString(i)+":y", draggable.get(i).y);
+    }
+
     // track colors
     for (int i=0; i<numTrackingColors; i++) {
         xml.setValue("trackColors:c"+ofToString(i), trackColors[i].getHex());
@@ -300,6 +404,7 @@ void ofxSandboxTracker::saveSettings(string filename) {
     gui.saveToFile("sandboxSettings.xml");
 }
 
+//--------------------------------------------------------------
 void ofxSandboxTracker::loadSettings(string filename) {
     gui.loadFromFile("sandboxSettings.xml");
     ofxXmlSettings xml;
@@ -311,10 +416,9 @@ void ofxSandboxTracker::loadSettings(string filename) {
     }
     
     // corners
-    setCorner(0, xml.getValue("corners:p0:x", originalCorners[0].x), xml.getValue("corners:p0:y", originalCorners[0].y));
-    setCorner(1, xml.getValue("corners:p1:x", originalCorners[1].x), xml.getValue("corners:p1:y", originalCorners[1].y));
-    setCorner(2, xml.getValue("corners:p2:x", originalCorners[2].x), xml.getValue("corners:p2:y", originalCorners[2].y));
-    setCorner(3, xml.getValue("corners:p3:x", originalCorners[3].x), xml.getValue("corners:p3:y", originalCorners[3].y));
+    for (int i=0; i<4; i++) {
+        setCorner(i, xml.getValue("corners:p"+ofToString(i)+":x", draggable.get(i).x), xml.getValue("corners:p"+ofToString(i)+":y", draggable.get(i).y));
+    }
 
     // track colors
     ofColor clr;
