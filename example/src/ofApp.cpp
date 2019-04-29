@@ -69,7 +69,7 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    ofBackground(0);
+    ofBackgroundGradient(ofColor(100), ofColor(0));
     ofSetColor(255);
     //src.draw(0,
     //sandbox.draw(width, 0);

@@ -24,44 +24,6 @@ public:
 class ofxSandboxTracker {
 public:
     
-    bool colorSelected;
-    ofTrueTypeFont font;
-    
-    void setAllColorSelectorsInactive(){
-        colorSelected = false;
-        for (auto c : colorSelectorsIn) {
-            c->setActive(false);
-        }
-        for (auto c : colorSelectorsOut) {
-            c->setActive(false);
-        }
-    }
-    
-    void colorInEvent(int & idx) {
-        if (colorSelectorsIn[idx]->getActive()) {
-            colorSelectorsIn[idx]->setActive(false);
-            return;
-        }
-        setAllColorSelectorsInactive();
-        colorSelectorsIn[idx]->setActive(true);
-        colorSelected = true;
-    }
-    
-    void colorOutEvent(int & idx) {
-        if (colorSelectorsOut[idx]->getActive()) {
-            colorSelectorsOut[idx]->setActive(false);
-            return;
-        }
-        setAllColorSelectorsInactive();
-        colorSelectorsOut[idx]->setActive(true);
-        colorSelected = true;
-    }
-    
-    
-    
-    
-    
-    
     ofxSandboxTracker();
     ~ofxSandboxTracker();
     
@@ -97,11 +59,11 @@ protected:
     
     void updateHomography();
     
-    ofxDraggable draggable;
-
-    vector<ofColor> trackColors;
-    vector<ofColor> outColors;
-
+    void setAllColorSelectorsInactive();
+    void colorInEvent(int & idx);
+    void colorOutEvent(int & idx);
+    
+    // cv
     ofFbo shaderFbo;
     ofShader shader;
     ofImage sandboxCurrent;
@@ -110,6 +72,8 @@ protected:
     ofImage diff;
     cv::Scalar motion;
     
+    // gui
+    ofxPanel gui;
     ofParameter<float> amtMotion;
     ofParameter<float> motionLerp;
     ofParameter<float> motionThreshLow;
@@ -117,30 +81,32 @@ protected:
     ofParameter<float> gBlurRadius;
     ofParameter<float> gNewFrameIndicator;
     
-    ofxPanel gui;
-    
+    // internal variables
     int dx, dy;
     int width;
     int height;
     int numTrackingColors;
     float thresh;
-    
     bool newFrame;
     bool overwritePrev;
     bool motionTrip;
     bool motionReady;
     
-    //ofPoint originalCorners[4];
+    //homography
+    ofxDraggable draggable;
     ofPoint distortedCorners[4];
     ofMatrix4x4 homography;
     ofFbo distortedFbo;
     
-
-    
-    
-    
+    // color picker
+    vector<ofColor> trackColors;
+    vector<ofColor> outColors;
     vector<ClickableColor*> colorSelectorsIn;
     vector<ClickableColor*> colorSelectorsOut;
+    bool colorSelected;
+    ofTrueTypeFont font;
+    ofColor selectedColor;
+    int selectedColorIdx;
     
 };
 

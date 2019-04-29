@@ -87,12 +87,12 @@ void ofxSandboxTracker::setup(int width, int height) {
     }
     
     // color selector elements
-    font.load("/Users/gene/Code/of_v0.9.6_osx_release/of-tools/KinectProjectorToolkit/perspective/perspectives-openni/bin/data/verdana.ttf", 20);
+    font.load("verdana.ttf", 20);
     for (int i=0; i<numTrackingColors; i++) {
         ClickableColor *ci = new ClickableColor(i);
         ClickableColor *co = new ClickableColor(i);
-        ci->setup("i"+ofToString(i), 10, 200 + 40*i, 44, 32);
-        co->setup("o"+ofToString(i), 120, 200 + 40*i, 44, 32);
+        ci->setup("i"+ofToString(i), 17, 200 + 40*i, 44, 32);
+        co->setup("o"+ofToString(i), 127, 200 + 40*i, 44, 32);
         colorSelectorsIn.push_back(ci);
         colorSelectorsOut.push_back(co);
         ofAddListener(ci->event, this, &ofxSandboxTracker::colorInEvent);
@@ -123,7 +123,7 @@ void ofxSandboxTracker::setup(int width, int height) {
     
     // setup draggable
     draggable.setBoundingBox(dx+gui.getWidth()+5, dy, width, height);
-    draggable.setAuto(true);
+    draggable.setAuto(false);
     updateHomography();
 }
 
@@ -136,6 +136,9 @@ void ofxSandboxTracker::mouseMoved(int x, int y) {
     for (auto c : colorSelectorsOut) {
         c->mouseMoved(x, y);
     }
+    if (!colorSelected) {
+        draggable.mouseMoved(x, y);
+    }
 }
 //--------------------------------------------------------------
 void ofxSandboxTracker::mousePressed(int x, int y) {
@@ -144,6 +147,9 @@ void ofxSandboxTracker::mousePressed(int x, int y) {
     }
     for (auto c : colorSelectorsOut) {
         c->mousePressed(x, y);
+    }
+    if (!colorSelected) {
+        draggable.mousePressed(x, y);
     }
 }
 //--------------------------------------------------------------
@@ -154,14 +160,25 @@ void ofxSandboxTracker::mouseDragged(int x, int y) {
     for (auto c : colorSelectorsOut) {
         c->mouseDragged(x, y);
     }
+    if (!colorSelected) {
+        draggable.mouseDragged(x, y);
+    }
 }
 //--------------------------------------------------------------
 void ofxSandboxTracker::mouseReleased(int x, int y) {
+    if (colorSelected) {
+        setTrackColor(selectedColorIdx, selectedColor);
+        setAllColorSelectorsInactive();
+        colorSelected = false;
+    }
     for (auto c : colorSelectorsIn) {
         c->mouseReleased(x, y);
     }
     for (auto c : colorSelectorsOut) {
         c->mouseReleased(x, y);
+    }
+    if (!colorSelected) {
+        draggable.mouseReleased(x, y);
     }
 }
 
@@ -263,7 +280,6 @@ void ofxSandboxTracker::draw(int x, int y) {
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::drawDebug() {
-    ofBackground(100);
     
     gui.draw();
     
@@ -295,7 +311,9 @@ void ofxSandboxTracker::drawDebug() {
     ofPopMatrix();
     
     // draw homography corners
-    draggable.draw();
+    if (!colorSelected) {
+        draggable.draw();
+    }
     
     if (colorSelected) {
         float tx = dx + gui.getWidth() + 5;
@@ -304,7 +322,7 @@ void ofxSandboxTracker::drawDebug() {
         ofRectangle rect(tx, ty, 2 * srcImage.getWidth(), 2 * srcImage.getHeight());
         if (rect.inside(mouse)) {
             float selectedColorRadius = ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 22, 32);
-            ofColor selectedColor = srcImage.getColor(int(0.5*(mouse.x - tx)), int(0.5*(mouse.y - ty)));
+            selectedColor = srcImage.getColor(int(0.5*(mouse.x - tx)), int(0.5*(mouse.y - ty)));
             ofPushStyle();
             ofSetColor(ofColor::black);
             ofDrawEllipse(mouse, selectedColorRadius+1, selectedColorRadius+1);
@@ -315,9 +333,10 @@ void ofxSandboxTracker::drawDebug() {
     }
 
     // draw color selectors
+    font.drawString("Color selector", 10, 192);
     for (auto c : colorSelectorsIn) {
         c->draw();
-        font.drawString("->", c->getRectangle().x + c->getRectangle().width + 10, c->getRectangle().y + 20);
+        font.drawString("->", c->getRectangle().x + c->getRectangle().width + 18, c->getRectangle().y + 25);
     }
     for (auto c : colorSelectorsOut) {
         c->draw();
@@ -334,6 +353,41 @@ void ofxSandboxTracker::setTrackColor(int idx, ofColor clr) {
 void ofxSandboxTracker::setOutColor(int idx, ofColor clr) {
     outColors[idx].set(clr);
     colorSelectorsOut[idx]->setBackgroundColor(clr);
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::setAllColorSelectorsInactive(){
+    colorSelected = false;
+    for (auto c : colorSelectorsIn) {
+        c->setActive(false);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->setActive(false);
+    }
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::colorInEvent(int & idx) {
+    if (colorSelectorsIn[idx]->getActive()) {
+        colorSelectorsIn[idx]->setActive(false);
+        return;
+    }
+    setAllColorSelectorsInactive();
+    selectedColorIdx = idx;
+    colorSelectorsIn[idx]->setActive(true);
+    colorSelected = true;
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::colorOutEvent(int & idx) {
+    if (colorSelectorsOut[idx]->getActive()) {
+        colorSelectorsOut[idx]->setActive(false);
+        return;
+    }
+    setAllColorSelectorsInactive();
+    selectedColorIdx = idx;
+    colorSelectorsOut[idx]->setActive(true);
+    colorSelected = true;
 }
 
 //--------------------------------------------------------------
@@ -360,7 +414,7 @@ void ofxSandboxTracker::keyEvent(int key) {
         setTrackColor(4, ofColor(r, g, b));
     } else if (key=='6') {
         //setTrackColor(5, ofColor(r, g, b));
-    
+      
     } else if (key=='q') {
         setOutColor(0, ofColor(r, g, b));
     } else if (key=='w') {
