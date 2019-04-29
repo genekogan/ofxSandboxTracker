@@ -127,61 +127,6 @@ void ofxSandboxTracker::setup(int width, int height) {
     updateHomography();
 }
 
-
-//--------------------------------------------------------------
-void ofxSandboxTracker::mouseMoved(int x, int y) {
-    for (auto c : colorSelectorsIn) {
-        c->mouseMoved(x, y);
-    }
-    for (auto c : colorSelectorsOut) {
-        c->mouseMoved(x, y);
-    }
-    if (!colorSelected) {
-        draggable.mouseMoved(x, y);
-    }
-}
-//--------------------------------------------------------------
-void ofxSandboxTracker::mousePressed(int x, int y) {
-    for (auto c : colorSelectorsIn) {
-        c->mousePressed(x, y);
-    }
-    for (auto c : colorSelectorsOut) {
-        c->mousePressed(x, y);
-    }
-    if (!colorSelected) {
-        draggable.mousePressed(x, y);
-    }
-}
-//--------------------------------------------------------------
-void ofxSandboxTracker::mouseDragged(int x, int y) {
-    for (auto c : colorSelectorsIn) {
-        c->mouseDragged(x, y);
-    }
-    for (auto c : colorSelectorsOut) {
-        c->mouseDragged(x, y);
-    }
-    if (!colorSelected) {
-        draggable.mouseDragged(x, y);
-    }
-}
-//--------------------------------------------------------------
-void ofxSandboxTracker::mouseReleased(int x, int y) {
-    if (colorSelected) {
-        setTrackColor(selectedColorIdx, selectedColor);
-        setAllColorSelectorsInactive();
-        colorSelected = false;
-    }
-    for (auto c : colorSelectorsIn) {
-        c->mouseReleased(x, y);
-    }
-    for (auto c : colorSelectorsOut) {
-        c->mouseReleased(x, y);
-    }
-    if (!colorSelected) {
-        draggable.mouseReleased(x, y);
-    }
-}
-
 //--------------------------------------------------------------
 void ofxSandboxTracker::updateHomography() {
     ofPoint originalCorners[4];
@@ -481,5 +426,62 @@ void ofxSandboxTracker::loadSettings(string filename) {
         setTrackColor(i, clr);
         clr.setHex(xml.getValue("outColors:c"+ofToString(i), outColors[i].getHex()));
         setOutColor(i, clr);
+    }
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::mouseMoved(int x, int y) {
+    for (auto c : colorSelectorsIn) {
+        c->mouseMoved(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mouseMoved(x, y);
+    }
+    if (!colorSelected) {
+        draggable.mouseMoved(x, y);
+    }
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::mousePressed(int x, int y) {
+    for (auto c : colorSelectorsIn) {
+        c->mousePressed(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mousePressed(x, y);
+    }
+    if (!colorSelected) {
+        draggable.mousePressed(x, y);
+    }
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::mouseDragged(int x, int y) {
+    for (auto c : colorSelectorsIn) {
+        c->mouseDragged(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mouseDragged(x, y);
+    }
+    if (!colorSelected) {
+        draggable.mouseDragged(x, y);
+    }
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::mouseReleased(int x, int y) {
+    if (colorSelected) {
+        setTrackColor(selectedColorIdx, selectedColor);
+        setAllColorSelectorsInactive();
+        colorSelected = false;
+    }
+    for (auto c : colorSelectorsIn) {
+        c->mouseReleased(x, y);
+    }
+    for (auto c : colorSelectorsOut) {
+        c->mouseReleased(x, y);
+    }
+    if (!colorSelected) {
+        draggable.mouseReleased(x, y);
     }
 }
