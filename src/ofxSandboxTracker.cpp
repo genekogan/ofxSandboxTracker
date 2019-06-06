@@ -7,6 +7,8 @@ using namespace cv;
 //--------------------------------------------------------------
 ofxSandboxTracker::ofxSandboxTracker() {
     thresh = 128.0;
+    settingsChanged = false;
+    sandbox_margin.set(50, 30);
 }
 
 //--------------------------------------------------------------
@@ -91,8 +93,8 @@ void ofxSandboxTracker::setup(int width, int height) {
     for (int i=0; i<numTrackingColors; i++) {
         ClickableColor *ci = new ClickableColor(i);
         ClickableColor *co = new ClickableColor(i);
-        ci->setup("i"+ofToString(i), 17, 200 + 40*i, 44, 32);
-        co->setup("o"+ofToString(i), 127, 200 + 40*i, 44, 32);
+        ci->setup("i"+ofToString(i), 32, 200 + 40*i, 44, 32);
+        co->setup("o"+ofToString(i), 142, 200 + 40*i, 44, 32);
         colorSelectorsIn.push_back(ci);
         colorSelectorsOut.push_back(co);
         ofAddListener(ci->event, this, &ofxSandboxTracker::colorInEvent);
@@ -122,8 +124,9 @@ void ofxSandboxTracker::setup(int width, int height) {
     distortedCorners[3].set(0, height);
     
     // setup draggable
-    draggable.setBoundingBox(dx+gui.getWidth()+5, dy, width, height);
+    draggable.setBoundingBox(dx+gui.getWidth()+sandbox_margin.x, dy+sandbox_margin.y, width, height);
     draggable.setAuto(false);
+    draggable.setEllipseSize(50);
     updateHomography();
 }
 
@@ -134,6 +137,7 @@ void ofxSandboxTracker::updateHomography() {
         originalCorners[i] = draggable.get(i);
     }
     homography = ofxHomography::findHomography(originalCorners, distortedCorners);
+    settingsChanged = true;
 }
 
 //--------------------------------------------------------------
@@ -160,6 +164,17 @@ bool ofxSandboxTracker::isMotionTripped() {
         return false;
     }
 }
+
+//--------------------------------------------------------------
+bool ofxSandboxTracker::isSettingsChanged() {
+    if (settingsChanged) {
+        settingsChanged = false;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::update(ofPixels & src) {
@@ -225,14 +240,15 @@ void ofxSandboxTracker::draw(int x, int y) {
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::drawDebug() {
-    
+    int margin = 35;
+
     gui.draw();
     
     ofPushMatrix();
     ofTranslate(dx, dy);
     
     // original image
-    ofTranslate(gui.getWidth()+5, 0);
+    ofTranslate(gui.getWidth()+sandbox_margin.x, sandbox_margin.y);
     ofSetColor(255);
     
     if (colorSelected) {
@@ -240,18 +256,22 @@ void ofxSandboxTracker::drawDebug() {
     } else {
         srcImage.draw(0, 0);
     }
+    font.drawString("webcam", 2, -4);
     
     if (!colorSelected) {
         // draw distorted image
         ofSetColor(255);
-        ofTranslate(srcImage.getWidth()+5, 0);
+        ofTranslate(srcImage.getWidth()+margin, 0);
+        font.drawString("distorted", 2, -4);
         distortedFbo.draw(0, 0);
         
         // draw shader image
-        ofTranslate(-srcImage.getWidth()-5, srcImage.getHeight()+5);
+        ofTranslate(-srcImage.getWidth()-margin, srcImage.getHeight()+margin);
         sandboxPrev.draw(0, 0);
-        sandboxCurrent.draw(shaderFbo.getWidth()+5, 0);
-    }
+        font.drawString("last input", 2, -4);
+        sandboxCurrent.draw(shaderFbo.getWidth()+margin, 0);
+        font.drawString("current", shaderFbo.getWidth()+margin+2, -4);
+}
     
     ofPopMatrix();
     
@@ -261,12 +281,12 @@ void ofxSandboxTracker::drawDebug() {
     }
     
     if (colorSelected) {
-        float tx = dx + gui.getWidth() + 5;
-        float ty = 0;
+        float tx = dx + gui.getWidth() + sandbox_margin.x;
+        float ty = sandbox_margin.y;
         ofPoint mouse(ofGetMouseX(), ofGetMouseY());
         ofRectangle rect(tx, ty, 2 * srcImage.getWidth(), 2 * srcImage.getHeight());
         if (rect.inside(mouse)) {
-            float selectedColorRadius = ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 22, 32);
+            float selectedColorRadius = ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 24, 64);
             selectedColor = srcImage.getColor(int(0.5*(mouse.x - tx)), int(0.5*(mouse.y - ty)));
             ofPushStyle();
             ofSetColor(ofColor::black);
@@ -278,7 +298,7 @@ void ofxSandboxTracker::drawDebug() {
     }
 
     // draw color selectors
-    font.drawString("Color selector", 10, 192);
+    font.drawString("Color selector", 30, 192);
     for (auto c : colorSelectorsIn) {
         c->draw();
         font.drawString("->", c->getRectangle().x + c->getRectangle().width + 18, c->getRectangle().y + 25);
@@ -292,12 +312,14 @@ void ofxSandboxTracker::drawDebug() {
 void ofxSandboxTracker::setTrackColor(int idx, ofColor clr) {
     trackColors[idx].set(clr);
     colorSelectorsIn[idx]->setBackgroundColor(clr);
+    settingsChanged = true;
 }
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::setOutColor(int idx, ofColor clr) {
     outColors[idx].set(clr);
     colorSelectorsOut[idx]->setBackgroundColor(clr);
+    settingsChanged = true;
 }
 
 //--------------------------------------------------------------
@@ -338,8 +360,8 @@ void ofxSandboxTracker::colorOutEvent(int & idx) {
 //--------------------------------------------------------------
 void ofxSandboxTracker::keyEvent(int key) {
 
-    int x = ofGetMouseX() - dx - (gui.getWidth()+5);
-    int y = ofGetMouseY() - dy;
+    int x = ofGetMouseX() - dx - (gui.getWidth() + sandbox_margin.x);
+    int y = ofGetMouseY() - dy - sandbox_margin.y;
     
     unsigned char * pixels = srcImage.getPixels().getData();
     int index = 3 * (y * srcImage.getWidth() + x);
@@ -385,7 +407,7 @@ void ofxSandboxTracker::keyEvent(int key) {
 }
 
 //--------------------------------------------------------------
-void ofxSandboxTracker::saveSettings(string filename) {
+void ofxSandboxTracker::saveSettings(string guiFilename, string sandboxFilename) {
     ofxXmlSettings xml;
     for (int i=0; i<4; i++) {
         xml.setValue("corners:p"+ofToString(i)+":x", draggable.get(i).x);
@@ -399,16 +421,16 @@ void ofxSandboxTracker::saveSettings(string filename) {
     }
 
     // save
-    xml.saveFile(filename);
-    gui.saveToFile("sandboxSettings.xml");
+    xml.saveFile(sandboxFilename);
+    gui.saveToFile(guiFilename);
 }
 
 //--------------------------------------------------------------
-void ofxSandboxTracker::loadSettings(string filename) {
-    gui.loadFromFile("sandboxSettings.xml");
+void ofxSandboxTracker::loadSettings(string guiFilename, string sandboxFilename) {
+    gui.loadFromFile(guiFilename);
     ofxXmlSettings xml;
     
-    bool success = xml.loadFile(filename);
+    bool success = xml.loadFile(sandboxFilename);
     if (!success) {
         ofLog(OF_LOG_WARNING) << "No settings file found";
         return;

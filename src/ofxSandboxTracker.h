@@ -32,6 +32,7 @@ public:
     void setDebugPosition(int x, int y);
     
     bool isMotionTripped();
+    bool isSettingsChanged();
     
     void draw(int x, int y);
     void drawDebug();
@@ -43,10 +44,10 @@ public:
     void setOutColor(int idx, ofColor clr);
     void setCorner(int idx, int x, int y);
     
-    void saveSettings(string filename);
-    void loadSettings(string filename);
-    void saveSettings() {saveSettings("settings.xml");}
-    void loadSettings() {loadSettings("settings.xml");}
+    void saveSettings(string guiFilename, string sandboxFilename);
+    void loadSettings(string guiFilename, string sandboxFilename);
+    void saveSettings() {saveSettings("sandboxSettings.xml", "settings.xml");}
+    void loadSettings() {loadSettings("sandboxSettings.xml", "settings.xml");}
 
     void keyEvent(int key);
     
@@ -74,6 +75,7 @@ protected:
     
     // gui
     ofxPanel gui;
+    ofVec2f sandbox_margin;
     ofParameter<float> amtMotion;
     ofParameter<float> motionLerp;
     ofParameter<float> motionThreshLow;
@@ -91,6 +93,7 @@ protected:
     bool overwritePrev;
     bool motionTrip;
     bool motionReady;
+    bool settingsChanged;
     
     //homography
     ofxDraggable draggable;

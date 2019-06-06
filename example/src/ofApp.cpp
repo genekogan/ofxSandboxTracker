@@ -30,7 +30,7 @@ void ofApp::setup(){
         cam.setDeviceID(0);
         cam.setup(640, 480);
     } else if (srcMode==1) {
-        video.load("/Users/gene/Documents/futurium_test2.mp4");
+        video.load("test2.mp4");
         video.setLoopState(OF_LOOP_NORMAL);
         video.play();
     } else {
