@@ -43,6 +43,7 @@ public:
     void setTrackColor(int idx, ofColor clr);
     void setOutColor(int idx, ofColor clr);
     void setCorner(int idx, int x, int y);
+    void setEllipseSize(int ellipseSize) {draggable.setEllipseSize(ellipseSize);}
     
     void saveSettings(string guiFilename, string sandboxFilename);
     void loadSettings(string guiFilename, string sandboxFilename);
