@@ -126,6 +126,10 @@ void ofxSandboxTracker::setup(int width, int height) {
     // setup draggable
     draggable.setBoundingBox(dx+gui.getWidth()+sandbox_margin.x, dy+sandbox_margin.y, width, height);
     draggable.setAuto(false);
+    draggable.getPoint(0)->setMessage("TL");
+    draggable.getPoint(1)->setMessage("TR");
+    draggable.getPoint(2)->setMessage("BR");
+    draggable.getPoint(3)->setMessage("BL");
     setEllipseSize(40);    
     updateHomography();
 }
