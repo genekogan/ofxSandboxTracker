@@ -139,6 +139,8 @@ void ofxSandboxTracker::updateHomography() {
     ofPoint originalCorners[4];
     for (int i=0; i<4; i++) {
         originalCorners[i] = draggable.get(i);
+        originalCorners[i].x /= (pw / srcImage.getWidth());
+        originalCorners[i].y /= (ph / srcImage.getHeight());
     }
     homography = ofxHomography::findHomography(originalCorners, distortedCorners);
     settingsChanged = true;
@@ -245,6 +247,10 @@ void ofxSandboxTracker::draw(int x, int y) {
 //--------------------------------------------------------------
 void ofxSandboxTracker::drawDebug() {
     int margin = 35;
+    
+    int remainingWidth = ofGetWidth() - (gui.getWidth()+sandbox_margin.x+2*margin);
+    pw = min((int) srcImage.getWidth(), int(float(remainingWidth)/2.0));
+    ph = int(pw * srcImage.getHeight() / srcImage.getWidth());
 
     gui.draw();
     
@@ -256,26 +262,28 @@ void ofxSandboxTracker::drawDebug() {
     ofSetColor(255);
     
     if (colorSelected) {
-        srcImage.draw(0, 0, 2*srcImage.getWidth(), 2*srcImage.getHeight());
+        //srcImage.draw(0, 0, 2*srcImage.getWidth(), 2*srcImage.getHeight());
+        srcImage.draw(0, 0, 2*pw, 2*ph);
     } else {
-        srcImage.draw(0, 0);
+        //srcImage.draw(0, 0);
+        srcImage.draw(0, 0, pw, ph);
     }
     font.drawString("webcam", 2, -4);
     
     if (!colorSelected) {
         // draw distorted image
         ofSetColor(255);
-        ofTranslate(srcImage.getWidth()+margin, 0);
+        ofTranslate(pw+margin, 0);
         font.drawString("distorted", 2, -4);
-        distortedFbo.draw(0, 0);
+        distortedFbo.draw(0, 0, pw, ph);
         
         // draw shader image
-        ofTranslate(-srcImage.getWidth()-margin, srcImage.getHeight()+margin);
-        sandboxPrev.draw(0, 0);
+        ofTranslate(-pw-margin, ph+margin);
+        sandboxPrev.draw(0, 0, pw, ph);
         font.drawString("last input", 2, -4);
-        sandboxCurrent.draw(shaderFbo.getWidth()+margin, 0);
+        sandboxCurrent.draw(pw+margin, 0, pw, ph);
         font.drawString("current", shaderFbo.getWidth()+margin+2, -4);
-}
+    }
     
     ofPopMatrix();
     
@@ -288,10 +296,12 @@ void ofxSandboxTracker::drawDebug() {
         float tx = dx + gui.getWidth() + sandbox_margin.x;
         float ty = sandbox_margin.y;
         ofPoint mouse(ofGetMouseX(), ofGetMouseY());
-        ofRectangle rect(tx, ty, 2 * srcImage.getWidth(), 2 * srcImage.getHeight());
+        ofRectangle rect(tx, ty, 2 * pw, 2 * ph);
         if (rect.inside(mouse)) {
             float selectedColorRadius = ofMap(sin(0.1*ofGetFrameNum()), -1, 1, 24, 64);
-            selectedColor = srcImage.getColor(int(0.5*(mouse.x - tx)), int(0.5*(mouse.y - ty)));
+            float rw = srcImage.getWidth() / (2.0 * pw);
+            float rh = srcImage.getHeight() / (2.0 * ph);
+            selectedColor = srcImage.getColor(int(rw*(mouse.x - tx)), int(rh*(mouse.y - ty)));
             ofPushStyle();
             ofSetColor(ofColor::black);
             ofDrawEllipse(mouse, selectedColorRadius+1, selectedColorRadius+1);
@@ -453,6 +463,8 @@ void ofxSandboxTracker::loadSettings(string guiFilename, string sandboxFilename)
         clr.setHex(xml.getValue("outColors:c"+ofToString(i), outColors[i].getHex()));
         setOutColor(i, clr);
     }
+    
+    updateHomography();
 }
 
 //--------------------------------------------------------------
