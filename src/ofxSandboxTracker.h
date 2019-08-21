@@ -24,6 +24,8 @@ public:
 class ofxSandboxTracker {
 public:
     
+    bool initialized = false;
+    
     ofxSandboxTracker();
     ~ofxSandboxTracker();
     

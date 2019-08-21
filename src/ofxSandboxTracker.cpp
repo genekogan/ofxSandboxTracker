@@ -237,6 +237,11 @@ void ofxSandboxTracker::update(ofPixels & src) {
     //motionReady = (amtMotion < motionThreshLow);
     
     gNewFrameIndicator = ofLerp(gNewFrameIndicator, 0, 0.1);
+    
+    if (!initialized && ofGetFrameNum() > 100) {
+        updateHomography();
+        initialized = true;
+    }
 }
 
 //--------------------------------------------------------------
@@ -463,8 +468,6 @@ void ofxSandboxTracker::loadSettings(string guiFilename, string sandboxFilename)
         clr.setHex(xml.getValue("outColors:c"+ofToString(i), outColors[i].getHex()));
         setOutColor(i, clr);
     }
-    
-    updateHomography();
 }
 
 //--------------------------------------------------------------
