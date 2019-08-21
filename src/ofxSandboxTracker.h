@@ -88,7 +88,7 @@ protected:
     
     // internal variables
     int dx, dy;
-    int pw, ph;
+    float pw, ph;
     int width;
     int height;
     int numTrackingColors;

@@ -8,7 +8,7 @@ using namespace cv;
 ofxSandboxTracker::ofxSandboxTracker() {
     thresh = 128.0;
     settingsChanged = false;
-    sandbox_margin.set(50, 30);
+    sandbox_margin.set(10, 30);
     pw = 0;
     ph = 0;
 }
@@ -191,6 +191,10 @@ void ofxSandboxTracker::update(ofPixels & src) {
     
     this->srcImage.setFromPixels(src);
     
+    if (!srcImage.isAllocated()) {
+        return;
+    }
+    
     // add some gaussian blur
     if (gBlurRadius > 0) {
         GaussianBlur(srcImage, srcImage, gBlurRadius);
@@ -247,12 +251,11 @@ void ofxSandboxTracker::draw(int x, int y) {
 
 //--------------------------------------------------------------
 void ofxSandboxTracker::drawDebug() {
-    int margin = 35;
     
     if (srcImage.isAllocated()) {
-        int remainingWidth = ofGetWidth() - (gui.getWidth()+sandbox_margin.x+2*margin);
-        pw = min((int) srcImage.getWidth(), int(float(remainingWidth)/2.0));
-        ph = int(pw * srcImage.getHeight() / srcImage.getWidth());
+        float remainingWidth = ofGetWidth() - (gui.getWidth()+sandbox_margin.x+2*sandbox_margin.x);
+        pw = min(srcImage.getWidth(), remainingWidth/2.0f);
+        ph = pw * srcImage.getHeight() / srcImage.getWidth();
         
         if (!initialized && srcImage.isAllocated()) {
             initialized = true;
@@ -261,6 +264,10 @@ void ofxSandboxTracker::drawDebug() {
     }
 
     gui.draw();
+    
+    if (!srcImage.isAllocated()) {
+        return;
+    }
     
     ofPushMatrix();
     ofTranslate(dx, dy);
@@ -281,16 +288,16 @@ void ofxSandboxTracker::drawDebug() {
     if (!colorSelected) {
         // draw distorted image
         ofSetColor(255);
-        ofTranslate(pw+margin, 0);
+        ofTranslate(pw+sandbox_margin.x, 0);
         font.drawString("distorted", 2, -4);
         distortedFbo.draw(0, 0, pw, ph);
         
         // draw shader image
-        ofTranslate(-pw-margin, ph+margin);
+        ofTranslate(-pw-sandbox_margin.x, ph+sandbox_margin.y);
         sandboxPrev.draw(0, 0, pw, ph);
         font.drawString("last input", 2, -4);
-        sandboxCurrent.draw(pw+margin, 0, pw, ph);
-        font.drawString("current", pw+margin+2, -4);
+        sandboxCurrent.draw(pw+sandbox_margin.x, 0, pw, ph);
+        font.drawString("current", pw+sandbox_margin.x+2, -4);
     }
     
     ofPopMatrix();
