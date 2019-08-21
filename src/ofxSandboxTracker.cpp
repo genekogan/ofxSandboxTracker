@@ -187,6 +187,7 @@ void ofxSandboxTracker::update(ofPixels & src) {
     if (draggable.getIsChanged()) {
         updateHomography();
     }
+    updateHomography();
     
     this->srcImage.setFromPixels(src);
     
