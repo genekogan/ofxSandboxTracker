@@ -8,6 +8,8 @@ using namespace cv;
 ofxSandboxTracker::ofxSandboxTracker() {
     thresh = 128.0;
     settingsChanged = false;
+    initialized = false;
+    isMapping = false;
     sandbox_margin.set(10, 30);
     pw = 0;
     ph = 0;
@@ -131,8 +133,16 @@ void ofxSandboxTracker::setup(int width, int height) {
     draggable.getPoint(1)->setMessage("TR");
     draggable.getPoint(2)->setMessage("BR");
     draggable.getPoint(3)->setMessage("BL");
-    setEllipseSize(50);
+    setEllipseSize(60);
     updateHomography();
+}
+
+//--------------------------------------------------------------
+void ofxSandboxTracker::setMapping(bool isMapping) {
+    this->isMapping = isMapping;
+    if (isMapping) {
+        setAllColorSelectorsInactive();
+    }
 }
 
 //--------------------------------------------------------------
@@ -140,8 +150,8 @@ void ofxSandboxTracker::updateHomography() {
     ofPoint originalCorners[4];
     for (int i=0; i<4; i++) {
         originalCorners[i] = draggable.get(i);
-        originalCorners[i].x /= (pw / srcImage.getWidth());
-        originalCorners[i].y /= (ph / srcImage.getHeight());
+        originalCorners[i].x /= (2*pw / srcImage.getWidth());
+        originalCorners[i].y /= (2*ph / srcImage.getHeight());
     }
     
     homography = ofxHomography::findHomography(originalCorners, distortedCorners);
@@ -269,6 +279,8 @@ void ofxSandboxTracker::drawDebug() {
         return;
     }
     
+    draggable.setBoundingBox(dx+gui.getWidth()+sandbox_margin.x, dy+sandbox_margin.y, 2*pw, 2*ph);
+    
     ofPushMatrix();
     ofTranslate(dx, dy);
     
@@ -276,20 +288,30 @@ void ofxSandboxTracker::drawDebug() {
     ofTranslate(gui.getWidth()+sandbox_margin.x, sandbox_margin.y);
     ofSetColor(ofColor::white);
     
-    if (colorSelected) {
+    if (colorSelected || isMapping) {
         //srcImage.draw(0, 0, 2*srcImage.getWidth(), 2*srcImage.getHeight());
         srcImage.draw(0, 0, 2*pw, 2*ph);
-    } else {
+    }
+    else {
         //srcImage.draw(0, 0);
         srcImage.draw(0, 0, pw, ph);
+        
+        ofBeginShape();
+        ofSetColor(ofColor::magenta, 50);
+        for (int i=0; i<4; i++) {
+            ofPoint p = draggable.get(i);
+            ofVertex(p.x / 2.0f, p.y / 2.0f);
+        }
+        ofEndShape();
+        ofSetColor(ofColor::white);
     }
     font.drawString("webcam", 2, -4);
     
-    if (!colorSelected) {
+    if (!colorSelected && !isMapping) {
         // draw distorted image
         ofSetColor(255);
         ofTranslate(pw+sandbox_margin.x, 0);
-        font.drawString("distorted", 2, -4);
+        font.drawString("undistorted", 2, -4);
         distortedFbo.draw(0, 0, pw, ph);
         
         // draw shader image
@@ -303,11 +325,11 @@ void ofxSandboxTracker::drawDebug() {
     ofPopMatrix();
     
     // draw homography corners
-    if (!colorSelected) {
+    if (isMapping) {
         draggable.draw();
     }
     
-    if (colorSelected) {
+    else if (colorSelected) {
         float tx = dx + gui.getWidth() + sandbox_margin.x;
         float ty = sandbox_margin.y;
         ofPoint mouse(ofGetMouseX(), ofGetMouseY());
@@ -327,7 +349,7 @@ void ofxSandboxTracker::drawDebug() {
     }
 
     // draw color selectors
-    font.drawString("Color selector", 30, 192);
+    font.drawString("Select color", 40, 192);
     for (auto c : colorSelectorsIn) {
         c->draw();
         font.drawString("->", c->getRectangle().x + c->getRectangle().width + 18, c->getRectangle().y + 25);
@@ -372,6 +394,7 @@ void ofxSandboxTracker::colorInEvent(int & idx) {
     selectedColorIdx = idx;
     colorSelectorsIn[idx]->setActive(true);
     colorSelected = true;
+    isMapping = false;
 }
 
 //--------------------------------------------------------------
@@ -384,6 +407,7 @@ void ofxSandboxTracker::colorOutEvent(int & idx) {
     selectedColorIdx = idx;
     colorSelectorsOut[idx]->setActive(true);
     colorSelected = true;
+    isMapping = false;
 }
 
 //--------------------------------------------------------------

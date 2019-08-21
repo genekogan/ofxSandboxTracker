@@ -23,9 +23,7 @@ public:
 //--------------------------------------------------------------
 class ofxSandboxTracker {
 public:
-    
-    bool initialized = false;
-    
+
     ofxSandboxTracker();
     ~ofxSandboxTracker();
     
@@ -36,6 +34,9 @@ public:
     bool isMotionTripped();
     bool isSettingsChanged();
     
+    void setMapping(bool isMapping);
+    bool getMapping(){return isMapping;}
+
     void draw(int x, int y);
     void drawDebug();
 
@@ -60,6 +61,8 @@ public:
     void mouseReleased(int x, int y);
     
 protected:
+    
+    
     
     void updateHomography();
     
@@ -104,7 +107,9 @@ protected:
     ofPoint distortedCorners[4];
     ofMatrix4x4 homography;
     ofFbo distortedFbo;
-    
+    bool initialized;
+    bool isMapping;
+
     // color picker
     vector<ofColor> trackColors;
     vector<ofColor> outColors;
