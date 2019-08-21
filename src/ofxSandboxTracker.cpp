@@ -9,6 +9,8 @@ ofxSandboxTracker::ofxSandboxTracker() {
     thresh = 128.0;
     settingsChanged = false;
     sandbox_margin.set(50, 30);
+    pw = 0;
+    ph = 0;
 }
 
 //--------------------------------------------------------------
@@ -101,7 +103,6 @@ void ofxSandboxTracker::setup(int width, int height) {
         //ofAddListener(co->event, this, &ofxSandboxTracker::colorOutEvent);
     }
     
-    
     // options
     gui.setup();
     gui.setName("Sandbox");
@@ -130,7 +131,7 @@ void ofxSandboxTracker::setup(int width, int height) {
     draggable.getPoint(1)->setMessage("TR");
     draggable.getPoint(2)->setMessage("BR");
     draggable.getPoint(3)->setMessage("BL");
-    setEllipseSize(40);    
+    setEllipseSize(50);
     updateHomography();
 }
 
@@ -142,6 +143,7 @@ void ofxSandboxTracker::updateHomography() {
         originalCorners[i].x /= (pw / srcImage.getWidth());
         originalCorners[i].y /= (ph / srcImage.getHeight());
     }
+    
     homography = ofxHomography::findHomography(originalCorners, distortedCorners);
     settingsChanged = true;
 }
@@ -181,13 +183,11 @@ bool ofxSandboxTracker::isSettingsChanged() {
     }
 }
 
-
 //--------------------------------------------------------------
 void ofxSandboxTracker::update(ofPixels & src) {
     if (draggable.getIsChanged()) {
         updateHomography();
     }
-    updateHomography();
     
     this->srcImage.setFromPixels(src);
     
@@ -238,11 +238,6 @@ void ofxSandboxTracker::update(ofPixels & src) {
     //motionReady = (amtMotion < motionThreshLow);
     
     gNewFrameIndicator = ofLerp(gNewFrameIndicator, 0, 0.1);
-    
-    if (!initialized && ofGetFrameNum() > 100) {
-        updateHomography();
-        initialized = true;
-    }
 }
 
 //--------------------------------------------------------------
@@ -254,9 +249,16 @@ void ofxSandboxTracker::draw(int x, int y) {
 void ofxSandboxTracker::drawDebug() {
     int margin = 35;
     
-    int remainingWidth = ofGetWidth() - (gui.getWidth()+sandbox_margin.x+2*margin);
-    pw = min((int) srcImage.getWidth(), int(float(remainingWidth)/2.0));
-    ph = int(pw * srcImage.getHeight() / srcImage.getWidth());
+    if (srcImage.isAllocated()) {
+        int remainingWidth = ofGetWidth() - (gui.getWidth()+sandbox_margin.x+2*margin);
+        pw = min((int) srcImage.getWidth(), int(float(remainingWidth)/2.0));
+        ph = int(pw * srcImage.getHeight() / srcImage.getWidth());
+        
+        if (!initialized && srcImage.isAllocated()) {
+            initialized = true;
+            updateHomography();
+        }
+    }
 
     gui.draw();
     
@@ -265,7 +267,7 @@ void ofxSandboxTracker::drawDebug() {
     
     // original image
     ofTranslate(gui.getWidth()+sandbox_margin.x, sandbox_margin.y);
-    ofSetColor(255);
+    ofSetColor(ofColor::white);
     
     if (colorSelected) {
         //srcImage.draw(0, 0, 2*srcImage.getWidth(), 2*srcImage.getHeight());
@@ -288,7 +290,7 @@ void ofxSandboxTracker::drawDebug() {
         sandboxPrev.draw(0, 0, pw, ph);
         font.drawString("last input", 2, -4);
         sandboxCurrent.draw(pw+margin, 0, pw, ph);
-        font.drawString("current", shaderFbo.getWidth()+margin+2, -4);
+        font.drawString("current", pw+margin+2, -4);
     }
     
     ofPopMatrix();
@@ -469,6 +471,8 @@ void ofxSandboxTracker::loadSettings(string guiFilename, string sandboxFilename)
         clr.setHex(xml.getValue("outColors:c"+ofToString(i), outColors[i].getHex()));
         setOutColor(i, clr);
     }
+    
+    updateHomography();
 }
 
 //--------------------------------------------------------------
