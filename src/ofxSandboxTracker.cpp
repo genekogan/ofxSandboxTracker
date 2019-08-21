@@ -295,16 +295,23 @@ void ofxSandboxTracker::drawDebug() {
     else {
         //srcImage.draw(0, 0);
         srcImage.draw(0, 0, pw, ph);
-        
-        ofBeginShape();
-        ofSetColor(ofColor::magenta, 50);
-        for (int i=0; i<4; i++) {
-            ofPoint p = draggable.get(i);
-            ofVertex(p.x / 2.0f, p.y / 2.0f);
-        }
-        ofEndShape();
-        ofSetColor(ofColor::white);
     }
+    
+    // draw input rectangle
+    ofBeginShape();
+    ofSetColor(ofColor::magenta, (colorSelected || isMapping) ? 20 : 50);
+    for (int i=0; i<4; i++) {
+        ofPoint p = draggable.get(i);
+        if (colorSelected || isMapping) {
+            ofVertex(p.x, p.y);
+        } else {
+            ofVertex(p.x/2.0, p.y/2.0);
+        }
+    }
+    ofEndShape();
+    ofSetColor(ofColor::white);
+    
+    // draw webcam string
     font.drawString("webcam", 2, -4);
     
     if (!colorSelected && !isMapping) {
