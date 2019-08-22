@@ -62,8 +62,6 @@ public:
     
 protected:
     
-    
-    
     void updateHomography();
     
     void setAllColorSelectorsInactive();

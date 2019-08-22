@@ -262,8 +262,13 @@ void ofxSandboxTracker::draw(int x, int y) {
 //--------------------------------------------------------------
 void ofxSandboxTracker::drawDebug() {
     
+    // this is a hack for futurium... just set drawScale=1 to fix it
+    float windowWidth = 1920;  // hack, should be ofGetWidth() :)
+    float remainingWidth = windowWidth - (gui.getWidth()+sandbox_margin.x+2*sandbox_margin.x);
+    float drawScale = (ofGetWidth() - 500 - (gui.getWidth()+sandbox_margin.x+2*sandbox_margin.x)) / remainingWidth;
+    drawScale = max(1.0f, drawScale);
+
     if (srcImage.isAllocated()) {
-        float remainingWidth = ofGetWidth() - (gui.getWidth()+sandbox_margin.x+2*sandbox_margin.x);
         pw = min(srcImage.getWidth(), remainingWidth/2.0f);
         ph = pw * srcImage.getHeight() / srcImage.getWidth();
         
@@ -283,6 +288,8 @@ void ofxSandboxTracker::drawDebug() {
     
     ofPushMatrix();
     ofTranslate(dx, dy);
+
+    ofScale(drawScale, drawScale);
     
     // original image
     ofTranslate(gui.getWidth()+sandbox_margin.x, sandbox_margin.y);
