@@ -114,6 +114,7 @@ void ofxSandboxTracker::setup(int width, int height) {
     //gui.add(motionThreshLow.set("motion trip low", 10, 0, 100));
     gui.add(gNewFrameIndicator.set("motion indicator", 0, 0, 1));
     gui.add(gBlurRadius.set("blur radius", 0, 0, 20));
+    gui.add(cameraFocus.set("camera focus", 125, 0, 250));
     
     // setup homography
     distortedFbo.allocate(width, height);
@@ -306,7 +307,7 @@ void ofxSandboxTracker::drawDebug() {
     
     // draw input rectangle
     ofBeginShape();
-    ofSetColor(ofColor::magenta, (colorSelected || isMapping) ? 20 : 50);
+    ofSetColor(ofColor::yellow, (colorSelected || isMapping) ? 45 : 75);
     for (int i=0; i<4; i++) {
         ofPoint p = draggable.get(i);
         if (colorSelected || isMapping) {

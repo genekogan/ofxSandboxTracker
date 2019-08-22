@@ -41,6 +41,8 @@ public:
     void drawDebug();
 
     ofFbo & getFbo() {return shaderFbo;}
+
+    int getCameraFocus() {return cameraFocus; }
     
     void setThreshold(float thresh) {this->thresh = thresh;}
     void setTrackColor(int idx, ofColor clr);
@@ -86,6 +88,7 @@ protected:
     ofParameter<float> motionThreshHigh;
     ofParameter<float> gBlurRadius;
     ofParameter<float> gNewFrameIndicator;
+    ofParameter<int> cameraFocus;
     
     // internal variables
     int dx, dy;
