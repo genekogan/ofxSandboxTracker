@@ -49,22 +49,100 @@ void ofxSandboxTracker::setup(int width, int height) {
          uniform vec3 out_color2;
          uniform vec3 out_color3;
          uniform vec3 out_color4;
+                  
+                                     
+                                     
+         vec3 rgb2hsv(vec3 c) {
+             vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+             vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+             vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+             float d = q.x - min(q.w, q.y);
+             float e = 1.0e-10;
+             return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+         }
                                      
          void main (void){
              vec2 pos = gl_TexCoord[0].st;
              vec3 clr = texture2DRect(tex0, pos).rgb;
              
+             
+             vec3 hsv = rgb2hsv(clr);
+             float hue = hsv.r;
+             float bright = hsv.b;
+             
+             
+             // color tracking
+             /*
              vec3 diff0 = clr - track_color0;
              vec3 diff1 = clr - track_color1;
              vec3 diff2 = clr - track_color2;
              vec3 diff3 = clr - track_color3;
              vec3 diff4 = clr - track_color4;
-             
+
              float dist0 = dot(diff0, diff0);
              float dist1 = dot(diff1, diff1);
              float dist2 = dot(diff2, diff2);
              float dist3 = dot(diff3, diff3);
              float dist4 = dot(diff4, diff4);
+              */
+ 
+             
+
+             // color tracking, collapse r+g+b
+             
+              vec3 diff0 = clr - track_color0;
+              vec3 diff1 = clr - track_color1;
+              vec3 diff2 = clr - track_color2;
+              vec3 diff3 = clr - track_color3;
+              vec3 diff4 = clr - track_color4;
+              
+              diff0.g = diff0.r;
+              diff0.b = diff0.r;
+              diff1.r = diff1.g;
+              diff1.b = diff1.g;
+              diff2.r = diff2.b;
+              diff2.g = diff2.b;
+              
+              float dist0 = dot(diff0, diff0);
+              float dist1 = dot(diff1, diff1);
+              float dist2 = dot(diff2, diff2);
+              float dist3 = dot(diff3, diff3);
+              float dist4 = dot(diff4, diff4);
+             
+             
+             
+            
+             // hue tracking
+             /*
+             float diff0 = hue - rgb2hsv(track_color0).r;
+             float diff1 = hue - rgb2hsv(track_color1).r;
+             float diff2 = hue - rgb2hsv(track_color2).r;
+             float diff3 = hue - rgb2hsv(track_color3).r;
+             float diff4 = hue - rgb2hsv(track_color4).r;
+             
+             float dist0 = abs(diff0);
+             float dist1 = abs(diff1);
+             float dist2 = abs(diff2);
+             float dist3 = abs(diff3);
+             float dist4 = abs(diff4);
+             */
+             
+             
+             // red, green, blue, bright, bright
+             /*
+             float diff0 = hue - rgb2hsv(track_color0).r;
+             float diff1 = hue - rgb2hsv(track_color1).r;
+             float diff2 = hue - rgb2hsv(track_color2).r;
+             float diff3 = bright - rgb2hsv(track_color3).b;
+             float diff4 = bright - rgb2hsv(track_color4).b;
+             
+             float dist0 = abs(diff0);
+             float dist1 = abs(diff1);
+             float dist2 = abs(diff2);
+             float dist3 = abs(diff3);
+             float dist4 = abs(diff4);
+             */
              
              float minDist = min(min(min(min(dist0, dist1), dist2), dist3), dist4);
              
@@ -75,6 +153,7 @@ void ofxSandboxTracker::setup(int width, int height) {
              color = mix(color, out_color3, float(dist3<=minDist));
              color = mix(color, out_color4, float(dist4<=minDist));
 
+             //gl_FragColor = vec4(vec3(hsv.g), 1.0);
              gl_FragColor = vec4(color, 1.0);
          }
     );
