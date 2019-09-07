@@ -4,6 +4,7 @@
 using namespace ofxCv;
 using namespace cv;
 
+
 //--------------------------------------------------------------
 ofxSandboxTracker::ofxSandboxTracker() {
     thresh = 128.0;
@@ -151,8 +152,8 @@ void ofxSandboxTracker::updateHomography() {
     ofPoint originalCorners[4];
     for (int i=0; i<4; i++) {
         originalCorners[i] = draggable.get(i);
-        originalCorners[i].x /= (2*pw / srcImage.getWidth());
-        originalCorners[i].y /= (2*ph / srcImage.getHeight());
+        originalCorners[i].x /= (2*pw*drawScale / srcImage.getWidth());
+        originalCorners[i].y /= (2*ph*drawScale / srcImage.getHeight());
     }
     
     homography = ofxHomography::findHomography(originalCorners, distortedCorners);
@@ -266,7 +267,7 @@ void ofxSandboxTracker::drawDebug() {
     // this is a hack for futurium... just set drawScale=1 to fix it
     float windowWidth = 1920;  // hack, should be ofGetWidth() :)
     float remainingWidth = windowWidth - (gui.getWidth()+sandbox_margin.x+2*sandbox_margin.x);
-    float drawScale = (ofGetWidth() - 500 - (gui.getWidth()+sandbox_margin.x+2*sandbox_margin.x)) / remainingWidth;
+    drawScale = (ofGetWidth() - 500 - (gui.getWidth()+sandbox_margin.x+2*sandbox_margin.x)) / remainingWidth;
     drawScale = max(1.0f, drawScale);
 
     if (srcImage.isAllocated()) {
@@ -285,35 +286,33 @@ void ofxSandboxTracker::drawDebug() {
         return;
     }
     
-    draggable.setBoundingBox(dx+gui.getWidth()+sandbox_margin.x, dy+sandbox_margin.y, 2*pw, 2*ph);
+    draggable.setBoundingBox(dx+gui.getWidth()+sandbox_margin.x, dy+sandbox_margin.y, 2*pw*drawScale, 2*ph*drawScale);
     
     ofPushMatrix();
     ofTranslate(dx, dy);
-
+    ofTranslate(gui.getWidth(), 0);
+    ofTranslate(sandbox_margin.x, sandbox_margin.y);
     ofScale(drawScale, drawScale);
     
     // original image
-    ofTranslate(gui.getWidth()+sandbox_margin.x, sandbox_margin.y);
     ofSetColor(ofColor::white);
-    
     if (colorSelected || isMapping) {
-        //srcImage.draw(0, 0, 2*srcImage.getWidth(), 2*srcImage.getHeight());
         srcImage.draw(0, 0, 2*pw, 2*ph);
     }
     else {
-        //srcImage.draw(0, 0);
         srcImage.draw(0, 0, pw, ph);
     }
     
     // draw input rectangle
     ofBeginShape();
-    ofSetColor(ofColor::yellow, (colorSelected || isMapping) ? 45 : 75);
+    float opa = (colorSelected || isMapping) ? 25 + 25 * sin(0.1*ofGetFrameNum()) : 40 + 40 * sin(0.1*ofGetFrameNum());
+    ofSetColor(ofColor::yellow, opa);
     for (int i=0; i<4; i++) {
         ofPoint p = draggable.get(i);
         if (colorSelected || isMapping) {
-            ofVertex(p.x, p.y);
+            ofVertex(p.x/drawScale, p.y/drawScale);
         } else {
-            ofVertex(p.x/2.0, p.y/2.0);
+            ofVertex(p.x/(2.0*drawScale), p.y/(2.0*drawScale));
         }
     }
     ofEndShape();

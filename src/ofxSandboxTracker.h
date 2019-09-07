@@ -93,6 +93,7 @@ protected:
     // internal variables
     int dx, dy;
     float pw, ph;
+    float drawScale;
     int width;
     int height;
     int numTrackingColors;
